@@ -4,6 +4,7 @@ Clon de twitter con fastapi
 # Python
 from uuid import UUID
 from datetime import date
+from datetime import datetime
 from typing import Optional
 
 # Pydantic
@@ -47,7 +48,15 @@ class User(UserBase):
 
 
 class Tweet(BaseModel):
-	pass
+	tweet_id: UUID = Field(...)
+	content: str = Field(
+		...,
+		max_length=256,
+		min_length=1
+	)
+	created_at: datetime = Field(dafault=datetime.now())
+	updated_at: Optional[datetime] = Field(default=None)
+	by: User = Field(...)
 
 
 @app.get(
