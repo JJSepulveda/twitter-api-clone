@@ -6,6 +6,7 @@ from uuid import UUID
 from datetime import date
 from datetime import datetime
 from typing import Optional, List
+import json
 
 # Pydantic
 from pydantic import BaseModel
@@ -15,8 +16,12 @@ from pydantic import Field
 # Fastapi
 from fastapi import FastAPI
 from fastapi import status
+from fastapi import Body
 
 app = FastAPI()
+
+# CONST
+USERS_JSON_FILENAME = "users.json"
 
 # Models
 
@@ -79,7 +84,7 @@ class Tweet(BaseModel):
 	tags=['Users']
 )
 def signup(
-
+	user: UserRegister = Body(...)
 ):
 	"""
 	Signup
@@ -87,17 +92,30 @@ def signup(
 	This path operation registers a user in the app
 
 	parameters:
-	- Request body parameter.
-	  - user: UserRegister
+	  - Request body parameter.
+	    - user: UserRegister
 
 	Returns a json with the basic user information:
-	- user_id: UUID
-	- email: EmailStr
-	- first_name: str
-	- last_name: str
-	- birth_date: str 
+	  - user_id: UUID
+	  - email: EmailStr
+	  - first_name: str
+	  - last_name: str
+	  - birth_date: datetime
 	"""
-	pass
+	with open(USERS_JSON_FILENAME, "r+", encoding="utf-8") as f:
+		results = f.read()
+		results = json.loads(results) # string a lista (Parse)
+
+		user_dict = user.dict() # json a diccionario (Parse)
+		user_dict["user_id"] = str(user_dict["user_id"]) # Cast
+		user_dict["birth_date"] = str(user_dict["birth_date"]) # Cast
+		# agrego al usuario nuevo al json que cargamos
+		results.append(user_dict)
+
+		f.seek(0) # nos movemos al principio del archivo
+		f.write(json.dumps(results)) # lista a json y escribo
+
+		return user
 
 ### Login a user
 @app.post(
