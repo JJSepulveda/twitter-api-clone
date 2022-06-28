@@ -25,12 +25,16 @@ class UserBase(BaseModel):
 	email: EmailStr = Field(...)
 
 
-class userLogin(UserBase):
+class PasswordMixin(BaseModel):
 	password: str = Field(
 		...,
 		min_length=8,
 		max_length=64
 	)
+
+
+class userLogin(UserBase, PasswordMixin):
+	pass
 
 
 class User(UserBase):
@@ -45,6 +49,10 @@ class User(UserBase):
 		max_length=50
 	)
 	birth_date: Optional[date] = Field(default=None)
+
+
+class UserRegister(User, PasswordMixin):
+	pass
 
 
 class Tweet(BaseModel):
@@ -70,7 +78,25 @@ class Tweet(BaseModel):
 	summary="Register a User",
 	tags=['Users']
 )
-def signup():
+def signup(
+
+):
+	"""
+	Signup
+
+	This path operation registers a user in the app
+
+	parameters:
+	- Request body parameter.
+	  - user: UserRegister
+
+	Returns a json with the basic user information:
+	- user_id: UUID
+	- email: EmailStr
+	- first_name: str
+	- last_name: str
+	- birth_date: str 
+	"""
 	pass
 
 ### Login a user
