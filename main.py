@@ -22,6 +22,7 @@ app = FastAPI()
 
 # CONST
 USERS_JSON_FILENAME = "users.json"
+TWEET_JSON_FILENAME = "tweets.json"
 
 # Models
 
@@ -46,12 +47,14 @@ class User(UserBase):
 	first_name: str = Field(
 		...,
 		min_length=1,
-		max_length=50
+		max_length=50,
+		example="Paimon"
 	)
 	last_name: str = Field(
 		...,
 		min_length=1,
-		max_length=50
+		max_length=50,
+		example='iv'
 	)
 	birth_date: Optional[date] = Field(default=None)
 
@@ -65,7 +68,8 @@ class Tweet(BaseModel):
 	content: str = Field(
 		...,
 		max_length=256,
-		min_length=1
+		min_length=1,
+		example="Contenido del tweet"
 	)
 	created_at: datetime = Field(dafault=datetime.now())
 	updated_at: Optional[datetime] = Field(default=None)
@@ -152,7 +156,7 @@ def show_all_users():
 	  - last_name: str
 	  - birth_date: datetime
 	"""
-	
+
 	with open(USERS_JSON_FILENAME, "r", encoding="utf-8") as f:
 		results = json.loads(f.read())
 		return results
@@ -212,8 +216,44 @@ def home():
 	summary="Create a Tweet",
 	tags=['Tweets']
 )
-def post():
-	pass
+def post(tweet: Tweet = Body(...)):
+	"""
+	Post a tweet
+
+	This path operation post a tweet in the app.
+
+	parameters:
+	  - Request body parameter.
+	    - tweet: Tweet
+
+	Returns a json with the basic tweet information:
+	  - tweet_id: UUID
+	  - content: str
+	  - created_at: datetime
+	  - updated_at: Optional[datetime]
+	  - by: User
+	"""
+	with open(TWEET_JSON_FILENAME, "r+", encoding="utf-8") as f:
+		results = f.read()
+		results = json.loads(results) # string a lista (Parse)
+
+		tweet_dict = tweet.dict() # json a diccionario (Parse)
+		tweet_dict["tweet_id"] = str(tweet_dict["tweet_id"]) # Cast
+		tweet_dict["created_at"] = str(tweet_dict["created_at"]) # Cast
+		
+		tweet_dict["updated_at"] = str(tweet_dict["updated_at"]) # Cast
+
+		tweet_dict["by"]["user_id"] = str(tweet_dict["by"]["user_id"]) # Cast
+		tweet_dict["by"]["birth_date"] = str(tweet_dict["by"]["birth_date"]) # Cast
+		
+		# agrego al usuario nuevo al json que cargamos
+		results.append(tweet_dict)
+
+		f.seek(0) # nos movemos al principio del archivo
+		f.write(json.dumps(results)) # lista a json y escribo
+
+		return tweet
+
 
 ### Show a tweet
 @app.get(
