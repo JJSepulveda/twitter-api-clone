@@ -3,6 +3,7 @@ Clon de twitter con fastapi
 """
 # Python
 from uuid import UUID
+from uuid import uuid1
 from datetime import date
 from datetime import datetime
 from typing import Optional, List
@@ -16,7 +17,11 @@ from pydantic import Field
 # Fastapi
 from fastapi import FastAPI
 from fastapi import status
-from fastapi import Body
+from fastapi import Body, Path
+from fastapi import HTTPException
+
+# Internal source code
+from services import FileMannager
 
 app = FastAPI()
 
@@ -27,7 +32,10 @@ TWEET_JSON_FILENAME = "tweets.json"
 # Models
 
 class UserBase(BaseModel):
-	user_id: UUID = Field(...) # universal unique identifier
+	user_id: UUID = Field(
+		...,
+		example=uuid1()
+	) # universal unique identifier
 	email: EmailStr = Field(...)
 
 
@@ -170,8 +178,37 @@ def show_all_users():
 	summary="Show a user",
 	tags=['Users']
 )
-def show_a_user():
-	pass
+def show_a_user(
+	user_id: str = Path(
+		..., 
+		title="User ID",
+		description="The user ID"
+	)
+):
+	"""
+	Show one user
+
+	This path operation shows the user with the user_id passed in the path parameter if it exists.
+
+	Parameters:
+	  - user_id: UUID
+
+	Returns the user that match with the user_id
+	  - user: User
+	"""
+	users = FileMannager.read_file(USERS_JSON_FILENAME)
+	# it doesn't need a cast because both are str.
+	for user in users:
+		if user['user_id'] == user_id:
+			return user
+
+	raise HTTPException(
+		status_code=status.HTTP_404_NOT_FOUND,
+		detail="The user_id is not valid."
+	)
+
+				
+
 
 ### Delete a user
 @app.delete(
