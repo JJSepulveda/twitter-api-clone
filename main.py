@@ -72,7 +72,10 @@ class UserRegister(User, PasswordMixin):
 
 
 class Tweet(BaseModel):
-	tweet_id: UUID = Field(...)
+	tweet_id: UUID = Field(
+		...,
+		example=uuid1()
+	)
 	content: str = Field(
 		...,
 		max_length=256,
@@ -317,8 +320,35 @@ def post(tweet: Tweet = Body(...)):
 	summary="Show a tweet",
 	tags=['Tweets']
 )
-def show_a_tweet():
-	pass
+def show_a_tweet(
+	tweet_id: str = Field(
+		..., 
+		title="Tweet ID",
+		description="The tweet ID"
+	)
+):
+	"""
+	Show one tweet
+
+	This path operation shows the tweet with the tweet_id in the path parameter if exists.
+
+	Parameters:
+	  - tweet_id: UUID
+
+	Returns the tweet that match with the user_id
+	  - tweet: Tweet
+	"""
+	tweets = FileMannager.read_file(TWEET_JSON_FILENAME)
+
+	for tweet in tweets:
+		if tweet['tweet_id'] == tweet_id:
+			return tweet
+
+	raise HTTPException(
+		status_code=status.HTTP_404_NOT_FOUND,
+		detail="The tweet_id is not valid."
+	)
+
 
 ### Delete a tweet
 @app.delete(
