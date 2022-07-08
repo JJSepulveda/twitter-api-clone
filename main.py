@@ -17,7 +17,7 @@ from pydantic import Field
 # Fastapi
 from fastapi import FastAPI
 from fastapi import status
-from fastapi import Body, Path
+from fastapi import Body, Path, Form
 from fastapi import HTTPException
 
 # Internal source code
@@ -225,15 +225,81 @@ def delete_a_user():
 	pass
 
 ### Update a user
-@app.put(
+@app.patch(
 	path="/users/{user_id}/update",
 	response_model=User,
 	status_code=status.HTTP_200_OK,
 	summary="Update a user",
 	tags=['Users']
 )
-def update_a_user():
-	pass
+def update_a_user(
+	user_id: str = Path(
+		...,
+		title="User id",
+		description="The user UUID"
+	),
+	first_name: Optional[str] = Form(
+		None,
+		min_length=1, 
+		max_length=50,
+		title="Person name",
+		description="This is the person name. It's between 1 and 50 characteres",
+		example="Jose"
+	),
+	last_name: Optional[str] = Form(
+		None,
+		min_length=1, 
+		max_length=50,
+		title="Person name",
+		description="This is the last name. It's between 1 and 50 characteres",
+		example="Santos"
+	),
+	email: Optional[EmailStr] = Form(
+		None,
+		title="Email",
+		description="This is the email",
+		example="example@hotmail.com"
+	),
+	birth_date: Optional[date] = Form(
+		default=None,
+		title="Birth date",
+		description="This is the birth date",
+		example="dd/mm/yy"
+	)
+):
+	"""
+	Update a user
+
+	This path operation update the user information
+
+	Parameters:
+	  - user_id: UUID
+	  - Request body parameter.
+	    - user: User
+
+	Returns a json with the new user information, with the following keys.
+	  - user_id: UUID
+	  - email: EmailStr
+	  - first_name: str
+	  - last_name: str
+	  - birth_date: datetime
+	"""
+	users = FileMannager.read_file(USERS_JSON_FILENAME)
+	
+	for element in users:
+		if element['user_id'] == user_id:
+			element['email'] = element['email'] if email is None else email
+			element['first_name'] = element['first_name'] if first_name is None else first_name
+			element['last_name'] = element['last_name'] if last_name is None else last_name
+			element['birth_date'] = element['birth_date'] if birth_date is None else str(birth_date)
+
+			FileMannager.write_file(USERS_JSON_FILENAME, users)
+			return element
+	
+	raise HTTPException(
+		status_code=status.HTTP_404_NOT_FOUND,
+		detail="The user_id is not valid."
+	)
 
 ## Tweets
 
