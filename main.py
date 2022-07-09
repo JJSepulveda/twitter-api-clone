@@ -273,9 +273,13 @@ def update_a_user(
 	This path operation update the user information
 
 	Parameters:
-	  - user_id: UUID
-	  - Request body parameter.
-	    - user: User
+	  - Path parameter:
+	    - user_id: UUID
+	  - Form:
+	    - first_name: Optional[str]
+	    - last_name: Optional[str]
+	    - email: Optional[Emailstr]
+	    - birth_date: Optional[date]
 
 	Returns a json with the new user information, with the following keys.
 	  - user_id: UUID
@@ -428,12 +432,57 @@ def delete_a_tweet():
 	pass
 
 ### Update a tweet
-@app.put(
+@app.patch(
 	path="/tweets/{tweet_id}/update",
 	response_model=Tweet,
 	status_code=status.HTTP_200_OK,
 	summary="Update a Tweet",
 	tags=['Tweets']
 )
-def update_a_tweet():
-	pass
+def update_a_tweet(
+	tweet_id: str = Path(
+		...,
+		title="Tweet id",
+		description="The tweet UUID"
+	),
+	content: str = Form(
+		...,
+		min_length=1, 
+		max_length=150,
+		title="Tweet content",
+		description="This is the person name. It's between 1 and 50 characteres",
+		example="Jose"
+	),
+):
+	"""
+	Update a tweet
+
+	This path operation update the tweet content
+
+	Parameters:
+ 	  - Path parameter:
+	    - tweet_id: UUID
+	  - Form:
+	    - content: Optional[str]
+
+	Returns a json with the basic tweet information:
+	  - tweet_id: UUID
+	  - content: str
+	  - created_at: datetime
+	  - updated_at: datetime
+	  - by: User
+	"""
+	tweets = FileMannager.read_file(TWEET_JSON_FILENAME)
+	
+	for element in tweets:
+		if element['tweet_id'] == tweet_id:
+			element['content'] = content
+			element['updated_at'] = str(datetime.now())
+
+			FileMannager.write_file(TWEET_JSON_FILENAME, tweets)
+			return element
+	
+	raise HTTPException(
+		status_code=status.HTTP_404_NOT_FOUND,
+		detail="The user_id is not valid."
+	)
